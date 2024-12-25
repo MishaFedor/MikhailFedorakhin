@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hamming code</title> 
+        <script>
+            function code(){                    //функция кодирования(добавление 3-ех контрольных битов)
+                let message = document.getElementById('inputData').value;       //Берём 4 контрольных введёных в инпут бита
+                let inputDigits = message.split('');                            //разделяем биты в массив
+                
+                for(let i = 0; i < inputDigits.length; i++){                    //данным циклом меняем элементы массива с string на int
+                    inputDigits[i] = parseInt(inputDigits[i]);
+                }
+                //Исключения
+                if (message.length != 4){
+                    document.getElementById('error_info').value = "Error. Enter 4 bits in input data";
+                    return 0;
+                }
+                for (let i = 0; i < message.length; i++){
+                    if (message[i] != "0" && message[i] != "1"){
+                        document.getElementById('error_info').value = "Error. Enter bits(0 or 1) in input data";
+                        return 0;
+                    }
+                }
+                inputDigits.push((inputDigits[0] + inputDigits[2] + inputDigits[3]) % 2);       //Согласно правилу составляем контрольные биты и добавляем в массив
+                inputDigits.push((inputDigits[1] + inputDigits[2] + inputDigits[3]) % 2);
+                inputDigits.push((inputDigits[0] + inputDigits[1] + inputDigits[3]) % 2);
+                document.getElementById('codedData').value = inputDigits.join('');              //Выводим полученное семибитное выражение в coded data 
+            }
+            function decode(){                                                                  //Функция декодирования(или же нахождения ОДНОЙ ошибки)
+                let s_message = document.getElementById('codedData').value;                     //Берём из coded data выражение и сплитим 
+                let second_message = s_message.split('');
+                //Исключения
+                if (second_message.length !=7){
+                    document.getElementById('error_info').value = "Error. Enter 7 bits in coded data";
+                    return 0;
+                }
+                for (let i = 0; i < second_message.length; i++){
+                    if (second_message[i] != "0" && second_message[i] != "1"){
+                        document.getElementById('error_info').value = "Error. Enter bits(0 or 1) in coded data";
+                        return 0;
+                    }
+                }
+                for(let i = 0; i < 8; i++){                                                     //данным циклом меняем элементы массива с string на int
+                    second_message[i] = parseInt(second_message[i]);
+                }
+                let n = [-1,-1,-1,-1,-1,-1,-1];                                                 //заводим список, который впоследствии будем менять и формировать семибитное выражение без ошибки
+
+                let error = 0;                                                                  //счетчик, который будет показывать на каком месте ошибка
+                if (((second_message[0] + second_message[2] + second_message[3]) % 2)===second_message[4]){     //формируем "круги", в которых не произошло ошибки
+                    n[0] = second_message[0];
+                    n[3] = second_message[3];
+                    n[2] = second_message[2];
+                    n[4] = second_message[4];
+                }
+                
+                if (((second_message[1] + second_message[2] + second_message[3]) % 2)===second_message[5]){
+                    n[1] = second_message[1];
+                    n[3] = second_message[3];
+                    n[2] = second_message[2];
+                    n[5] = second_message[5];
+                }
+                
+                if (((second_message[1] + second_message[0] + second_message[3]) % 2)===second_message[6]){
+                    n[3] = second_message[3];
+                    n[1] = second_message[1];
+                    n[0] = second_message[0];
+                    n[6] = second_message[6];
+                }
+                let cnt = 0;                                    //счетчик неизмененных элементов n
+                for(let i = 0; i < 7;i++){
+                    if(n[i] == -1){
+                        cnt++;
+                    }
+                }
+                if (cnt == 7){                              //если ничего не поменялось, то ошибка в бите который находится в центре пересечения кругов(в данном случае 4 бит)
+                    n[3] = (second_message[3] + 1) % 2;
+                    n[0] = second_message[0];
+                    n[1] = second_message[1];
+                    n[2] = second_message[2];
+                    n[4] = ((n[0] + n[2] + n[3]) % 2);
+                    n[5] = ((n[1] + n[2] + n[3]) % 2);
+                    n[6] = ((n[0] + n[1] + n[3]) % 2);
+                    error = 4;
+                }
+                else if(cnt == 3){                         //если три неизмененных элемента, значит ошибка в одном из четырех изначальных битов 
+                    for(let i = 0;i < 4; i++){
+                        if(n[i] == -1){
+                            n[i] = (second_message[i] + 1) % 2;
+                            error = i + 1;
+                        }
+                    }
+                    n[4] = ((n[0] + n[2] + n[3]) % 2);
+                    n[5] = ((n[1] + n[2] + n[3]) % 2);
+                    n[6] = ((n[0] + n[1] + n[3]) % 2);
+                }
+                else{                                     //если всего один неизмененный элемент, то ошибка в контрольной сумме
+                    for (let i = 4; i < 8; i++){
+                        if(n[i] === -1){
+                            n[i] = ((second_message[i] + 1) % 2);
+                            error = i + 1;
+                        }   9
+                    }
+                }
+                
+                if (error != 0){                        //если ошибка изменилась с нуля, значит выводим исправленную дату и эелемент, в котором была ошибка
+                    document.getElementById('decodedData').value = n.join('');
+                    document.getElementById('error_info').value = "Error was in " + String(error);
+                }
+                else{                                   //если ошибок не было, то ничего не меняем и выводим, что ошибок не было
+                    document.getElementById('decodedData').value = n.join('');
+                    document.getElementById('error_info').value = "No error.";
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <h>Hamming code</h>
+        <p> <input type='text' id = 'inputData'/> input data</p>        
+        <p> <input type='button' onclick = 'code()' value='Code'/></p>
+        <p> <input type='text' id ='codedData'/> coded data</p>
+        <p> <input type='button' onclick = 'decode()' value="Decode"/> </p>
+        <p> <input type='text'id = 'decodedData'/> decoded data</p>
+        <p> <output id = 'error_info'></p>
+
+    </body>
+</html>
