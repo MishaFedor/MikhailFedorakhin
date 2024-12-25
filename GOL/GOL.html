@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Of Life</title>
+</head>
+<body>
+<h1><center>Game Of Life</center></h1>
+
+<center>
+    <canvas id="myCanvas" width="400px" height="400px" style="border:1px solid black;">
+        <center>Sorry, your browser does not support canvas.</center>
+    </canvas>
+</center>
+
+<center>
+    <p> <input type='button' onclick = 'go()' value='Start' style="background-color: black; color: white;"/></p>
+</center>
+
+<center>
+    <p> <input type='button' onclick = 'goRandom()' value='Random Start' style="background-color: black; color: white;"/></p>
+</center>
+
+<script>
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
+let cellSize = 20;
+let fieldSize = 20;
+let currentField = new Array(fieldSize);
+let nextField = new Array(fieldSize);
+let canvasRect = canvas.getBoundingClientRect();
+
+for (let i = 0; i < fieldSize; i++){
+    nextField[i] = new Array(fieldSize);
+    currentField[i] = new Array(fieldSize).fill(0);
+}
+
+function mClick(click) {
+    let x = Math.floor((click.clientX - canvasRect.left) / cellSize); 
+    let y = Math.floor((click.clientY - canvasRect.top) / cellSize);  
+    currentField[y][x] = currentField[y][x] === 1 ? 0 : 1;
+    draw();
+}
+
+canvas.addEventListener("click", mClick);
+
+function neigbourCount(r, c){   //r - raw   c - column
+    let sum = 0;
+    for (let i = -1; i <= 1; i++){
+        for (let j = -1; j <= 1; j++){
+            sum += currentField[(r + i + fieldSize) % fieldSize][(c + j + fieldSize) % fieldSize];
+        }
+    }
+    sum -= currentField[r][c];    
+    return sum;
+}
+
+function makeStep(){
+    for(let i = 0; i < fieldSize; i++){
+        for(let j = 0; j < fieldSize; j++){
+            let nbs = neigbourCount(i,j);
+            if (((currentField[i][j] === 0) && (nbs === 3)) || ((currentField[i][j] === 1) && (nbs === 2 || nbs === 3)))
+                nextField[i][j] = 1;
+            else
+                nextField[i][j] = 0;
+        }
+    }
+
+    for(let i = 0; i < fieldSize; i++){
+        for(let j = 0; j < fieldSize; j++){
+            currentField[i][j] = nextField[i][j];
+        }
+    }
+}
+
+function draw(){
+    for (let i = 0; i < fieldSize; i++){
+        for (let j = 0; j < fieldSize; j++){
+            ctx.fillStyle = currentField[i][j] === 1 ? "red" : "white";
+            ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+        }
+    }
+}
+
+function initRandom(){
+    for (let i = 0; i < fieldSize; i++){
+        for (let j = 0; j < fieldSize; j++){
+            if (Math.random() > 0.7)
+                currentField[i][j] = 1;
+            else
+                currentField[i][j] = 0;
+        }
+    }
+}
+
+function start(){
+    draw();
+    makeStep();
+}
+
+function goRandom(){
+    initRandom();
+    draw()
+    setInterval(start, 500);
+}
+
+function go(){
+    draw();
+    setInterval(start, 500);
+}
+
+draw();
+
+</script>
+</body>
+</html>
